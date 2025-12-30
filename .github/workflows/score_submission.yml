@@ -3,14 +3,15 @@ name: Score Submission
 on:
   pull_request:
     paths:
-      - 'submissions/*.csv'  # Only runs when a student uploads a CSV
+      - 'submissions/*.csv'
 
 jobs:
   score:
     runs-on: ubuntu-latest
+
     permissions:
-      contents: read
-      pull-requests: write  # Allows the bot to comment on the PR
+      contents: write          # needed to update leaderboard
+      pull-requests: write     # needed to comment on PR
 
     steps:
     # 1. Checkout the student's code
@@ -27,48 +28,62 @@ jobs:
       run: |
         pip install -r starter_code/requirements.txt
 
-    # 4. RESTORE THE HIDDEN ANSWER KEY
-    # We take the secret text and write it back to 'data/test_labels.csv'
-    # so the scoring script can read it locally on the server.
+    # 4. Restore the hidden ground truth from GitHub Secrets
     - name: Restore Ground Truth
       run: |
+        mkdir -p data
         echo "${{ secrets.GROUND_TRUTH_CSV }}" > data/test_labels.csv
 
-    # 5. Run the Scoring Script
+    # 5. Run the scoring script
     - name: Run scoring logic
       id: grade
       run: |
-        # Find the submitted CSV (ignoring sample_submission)
         SUBMISSION_FILE=$(find submissions -name "*.csv" ! -name "sample_submission.csv" | head -n 1)
-        
+
         if [ -z "$SUBMISSION_FILE" ]; then
           echo "No submission file found!"
           exit 1
         fi
 
         echo "Found submission: $SUBMISSION_FILE"
-        
-        # Run the script and capture the output
+
         OUTPUT=$(python scoring_script.py "$SUBMISSION_FILE")
-        
-        # Print output to logs for debugging
+
         echo "$OUTPUT"
-        
-        # Save output to a variable to post as a comment later
-        # (We use a special format for multi-line strings in GitHub Actions)
+
+        # Save full output for PR comment
         echo "SCORE_REPORT<<EOF" >> $GITHUB_ENV
         echo "$OUTPUT" >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
 
-    # 6. Post the Score as a Comment on the Pull Request
+        # Extract numeric score (expects e.g. 'Submission F1 Score: 0.7321')
+        SCORE=$(echo "$OUTPUT" | grep -Eo '[0-9]+\.[0-9]+' | tail -n 1)
+        echo "SCORE=$SCORE" >> $GITHUB_ENV
+
+    # 6. Comment score on the Pull Request
     - name: Comment Score
       uses: actions/github-script@v6
       with:
         script: |
           const output = process.env.SCORE_REPORT;
+          const score = process.env.SCORE;
           github.rest.issues.createComment({
             issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
-            body: "### 🤖 Automated Grading Report\n\n```\n" + output + "\n```"
-          })
+            body: `### 🤖 Automated Grading Report\n\n**Score:** ${score}\n\n\`\`\`\n${output}\n\`\`\``
+          });
+
+    # 7. Update leaderboard
+    - name: Update leaderboard
+      run: |
+        python update_leaderboard.py "${{ github.actor }}" "$SCORE"
+
+    # 8. Commit leaderboard update
+    - name: Commit leaderboard update
+      run: |
+        git config user.name "github-actions"
+        git config user.email "github-actions@github.com"
+        git add leaderboard.md
+        git commit -m "Update leaderboard"
+        git push
