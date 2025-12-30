@@ -1,0 +1,24 @@
+# Python caches
+__pycache__/
+*.pyc
+
+# System files
+.DS_Store
+
+# Virtual Environments (Prevent uploading thousands of library files)
+venv/
+env/
+test_env/
+
+# Raw Data (Don't upload the temp download folder)
+temp_data/
+temp_mutag_download/
+
+# Local Outputs (Don't upload your local test runs)
+submissions/baseline_submission.csv
+
+# SECURITY: Hidden Answers (CRITICAL - Do not remove!)
+ground_truth.csv
+data/test_labels.csv
+
+generate_data.py
