@@ -28,11 +28,11 @@ jobs:
       run: |
         pip install -r starter_code/requirements.txt
 
-    # 4. Restore the hidden ground truth from GitHub Secrets
+  # 4. Restore the hidden ground truth from GitHub Secrets
     - name: Restore Ground Truth
       run: |
-        mkdir -p data
-        echo "${{ secrets.GROUND_TRUTH_CSV }}" > data/test_labels.csv
+        # Write directly to the root folder as 'ground_truth.csv'
+        echo "${{ secrets.GROUND_TRUTH_CSV }}" > ground_truth.csv
 
     # 5. Run the scoring script
     - name: Run scoring logic
