@@ -1,0 +1,74 @@
+name: Score Submission
+
+on:
+  pull_request:
+    paths:
+      - 'submissions/*.csv'  # Only runs when a student uploads a CSV
+
+jobs:
+  score:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write  # Allows the bot to comment on the PR
+
+    steps:
+    # 1. Checkout the student's code
+    - uses: actions/checkout@v3
+
+    # 2. Set up Python
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    # 3. Install dependencies
+    - name: Install dependencies
+      run: |
+        pip install -r starter_code/requirements.txt
+
+    # 4. RESTORE THE HIDDEN ANSWER KEY
+    # We take the secret text and write it back to 'data/test_labels.csv'
+    # so the scoring script can read it locally on the server.
+    - name: Restore Ground Truth
+      run: |
+        echo "${{ secrets.GROUND_TRUTH_CSV }}" > data/test_labels.csv
+
+    # 5. Run the Scoring Script
+    - name: Run scoring logic
+      id: grade
+      run: |
+        # Find the submitted CSV (ignoring sample_submission)
+        SUBMISSION_FILE=$(find submissions -name "*.csv" ! -name "sample_submission.csv" | head -n 1)
+        
+        if [ -z "$SUBMISSION_FILE" ]; then
+          echo "No submission file found!"
+          exit 1
+        fi
+
+        echo "Found submission: $SUBMISSION_FILE"
+        
+        # Run the script and capture the output
+        OUTPUT=$(python scoring_script.py "$SUBMISSION_FILE")
+        
+        # Print output to logs for debugging
+        echo "$OUTPUT"
+        
+        # Save output to a variable to post as a comment later
+        # (We use a special format for multi-line strings in GitHub Actions)
+        echo "SCORE_REPORT<<EOF" >> $GITHUB_ENV
+        echo "$OUTPUT" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
+
+    # 6. Post the Score as a Comment on the Pull Request
+    - name: Comment Score
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const output = process.env.SCORE_REPORT;
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: "### 🤖 Automated Grading Report\n\n```\n" + output + "\n```"
+          })
