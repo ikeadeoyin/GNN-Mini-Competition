@@ -1,24 +1,57 @@
 # Python caches
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.Python
 
 # System files
 .DS_Store
+Thumbs.db
 
-# Virtual Environments (Prevent uploading thousands of library files)
+# Virtual Environments
 venv/
 env/
-test_env/
+.env/
+.venv/
 
-# Raw Data (Don't upload the temp download folder)
+# IDE/Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+.spyderproject
+.spyproject
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*.ipynb
+
+# PyTorch model files (participants shouldn't upload trained models)
+*.pt
+*.pth
+*.ckpt
+
+# Raw/Temp Data
 temp_data/
 temp_mutag_download/
 
-# Local Outputs (Don't upload your local test runs)
-submissions/baseline_submission.csv
+# Participant submissions (keep only sample_submission.csv)
+submissions/*.csv
+!submissions/sample_submission.csv
 
-# SECURITY: Hidden Answers (CRITICAL - Do not remove!)
+# ===============================================
+# SECURITY: Hidden Ground Truth (CRITICAL!)
+# These files contain test labels - DO NOT REMOVE!
+# ===============================================
 ground_truth.csv
 data/test_labels.csv
 
+# Data generation script (organizer only)
 generate_data.py
+
+# Logs
+*.log
+
+# PDF attachments
+*.pdf

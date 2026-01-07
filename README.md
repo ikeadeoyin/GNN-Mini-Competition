@@ -16,7 +16,7 @@ This challenge is designed to be solvable using methods covered in **DGL Lecture
 
 ### The Task
 
-* [cite_start]**Problem Type:** Graph Classification[cite: 217].
+* **Problem Type:** Graph Classification
 
 * **Input:** Small molecular graphs (Nodes = Atoms, Edges = Bonds).
 * **Output:** Binary Label (0 = Safe, 1 = Mutagenic).
@@ -31,29 +31,36 @@ This challenge is designed to be solvable using methods covered in **DGL Lecture
 ```text
 gnn-challenge/
 ├── data/
-│   ├── train.csv               # Training IDs and Labels
-│   ├── test.csv                # Test IDs (No labels - you predict these!)
-│   ├── all_nodes.csv           # Features for all atoms in the dataset
-│   └── all_edges.csv           # Bond connections for all molecules
+│   ├── train_nodes.csv         # Node features for training graphs
+│   ├── train_edges.csv         # Edge connections for training graphs
+│   ├── train_labels.csv        # Training graph IDs and labels
+│   ├── test_nodes.csv          # Node features for test graphs
+│   └── test_edges.csv          # Edge connections for test graphs
 ├── starter_code/
-│   ├── baseline.py             # Simple Random Forest baseline to get started
+│   ├── baseline.py                # GNN baseline using GINEConv with edge features
 │   └── requirements.txt        # Python dependencies
 ├── submissions/                # Save your prediction CSVs here
 ├── scoring_script.py           # Script to evaluate your model locally
+├── leaderboard.md              # Current standings
 └── README.md
-
+```
 
 ## 📊 Dataset Description
 The dataset is derived from **MUTAG** (Mutagenic Compounds) but processed into a challenging scaffold split.
 
-### 1. The Graph Data (`data/all_nodes.csv` & `data/all_edges.csv`)
-Since graphs are complex, the raw structure is stored in two helper files:
-* **Nodes:** `graph_id`, `node_id`, `atom_type` (The features).
-* **Edges:** `graph_id`, `source_node`, `target_node`, `bond_type` (The adjacency).
+### 1. Training Data
+* **`train_nodes.csv`:** `graph_id`, `node_id`, `atom_type` - Node features for each atom
+* **`train_edges.csv`:** `graph_id`, `source_node`, `target_node`, `bond_type` - Bond connections
+* **`train_labels.csv`:** `graph_id`, `label` - Ground truth labels (0 = Safe, 1 = Mutagenic)
 
-### 2. The Split (`data/train.csv` & `data/test.csv`)
-* **Train:** Contains `graph_id` and the ground truth `label` (0 or 1). Use this to train your GNN.
-* **Test:** Contains only `graph_id`. The labels are hidden. **You must generate predictions for these IDs.**
+### 2. Test Data
+* **`test_nodes.csv`:** Node features for test molecules
+* **`test_edges.csv`:** Bond connections for test molecules
+* **Note:** Test labels are hidden. You must predict these!
+
+### 3. Feature Details
+* **`atom_type`:** 7 unique atom types (0-6), representing different elements
+* **`bond_type`:** 4 unique bond types (0-3), representing single, double, aromatic bonds, etc.
 
 ## 🚀 Getting Started
 
@@ -66,12 +73,21 @@ pip install -r starter_code/requirements.txt
 
 ### 2. Run the Baseline Model
 
-We provide a simple `baseline.py` that treats the graph as a "Bag of Atoms" (ignoring connections) and trains a Random Forest. This sets the score to beat.
+We provide a GNN baseline model using GINEConv:
 
 ```bash
 python starter_code/baseline.py
 ```
-Output: This will generate submissions/baseline_submission.csv.
+
+This model leverages both node features (atom types) and edge features (bond types) using Graph Isomorphism Network with Edge features.
+
+**Baseline Performance:**
+| Metric | Score |
+|--------|-------|
+| Val Accuracy | ~90% |
+| Test Accuracy | ~79% |
+
+🎯 **Your goal:** Improve upon this baseline by experimenting with architectures, hyperparameters, and regularization!
 
 ### 3. Evaluate Your Model
 
@@ -99,13 +115,27 @@ graph_id: Must match the IDs in data/test.csv.
 
 label: Your prediction (0 or 1).
 
+## 🏆 Leaderboard
+
+See [leaderboard.md](leaderboard.md) for current standings!
+
+---
+
 ## 💡 Tips for Success
 
-Use GNNs: The baseline ignores bonds. Use GCNConv or GINConv (Lecture 3) to leverage the graph structure.
+1. **Use GNNs:** The baseline ignores bonds. Use `GCNConv`, `GINConv`, or `GINEConv` to leverage the graph structure.
 
-Global Pooling: Since this is Graph classification, remember to use a readout layer (e.g., global_mean_pool or global_add_pool) to aggregate node features into a graph embedding (Lecture 4).
+2. **Don't forget edge features!** The `bond_type` column contains valuable information about chemical bonds. Models like `GINEConv` can incorporate edge features.
 
-Regularization: The dataset is small. Use Dropout and Weight Decay to prevent overfitting.
+3. **Global Pooling:** Since this is graph classification, use a readout layer (`global_mean_pool` or `global_add_pool`) to aggregate node features into a graph embedding.
+
+4. **One-hot encoding:** Convert categorical features (`atom_type`, `bond_type`) to one-hot vectors for better performance.
+
+5. **Regularization:** The dataset is small (~150 training graphs). Use Dropout and Weight Decay to prevent overfitting.
+
+6. **Early stopping:** Track validation accuracy and save the best model checkpoint.
+
+---
 
 ## 📜 License
 
