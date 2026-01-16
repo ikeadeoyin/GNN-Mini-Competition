@@ -37,8 +37,7 @@ temp_data/
 temp_mutag_download/
 
 # Participant submissions (keep only sample_submission.csv)
-submissions/*.csv
-!submissions/sample_submission.csv
+submissions/baseline_submission.csv
 
 # ===============================================
 # SECURITY: Hidden Ground Truth (CRITICAL!)
