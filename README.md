@@ -115,9 +115,16 @@ graph_id: Must match the IDs in data/test.csv.
 
 label: Your prediction (0 or 1).
 
+## 📤 How to Submit
+
+- Fork this repository.
+- Save your prediction as `submissions/YourName.csv`.
+- Open a Pull Request to the main branch.
+
+
 ## 🏆 Leaderboard
 
-See [leaderboard.md](leaderboard.md) for current standings!
+<!-- todo -->
 
 ---
 
