@@ -74,16 +74,26 @@ jobs:
             body: `### 🤖 Automated Grading Report\n\n**Score:** ${score}\n\n\`\`\`\n${output}\n\`\`\``
           });
 
-    # 7. Update leaderboard
-    - name: Update leaderboard
+    # 7. Update leaderboard on main branch
+    - name: Update leaderboard on main
       run: |
-        python update_leaderboard.py "${{ github.actor }}" "$SCORE"
-
-    # 8. Commit leaderboard update
-    - name: Commit leaderboard update
-      run: |
+        # Save the score to use after checkout
+        SCORE_VALUE=$SCORE
+        ACTOR="${{ github.actor }}"
+        
+        # Checkout main branch (fresh)
+        git fetch origin main
+        git checkout main
+        
+        # Restore ground truth (needed for the script)
+        echo "${{ secrets.GROUND_TRUTH_CSV }}" > ground_truth.csv
+        
+        # Run leaderboard update
+        python update_leaderboard.py "$ACTOR" "$SCORE_VALUE"
+        
+        # Commit and push only leaderboard.md
         git config user.name "github-actions"
         git config user.email "github-actions@github.com"
         git add leaderboard.md
-        git commit -m "Update leaderboard"
-        git push
+        git diff --staged --quiet || git commit -m "🏆 Update leaderboard: $ACTOR scored $SCORE_VALUE"
+        git push origin main
